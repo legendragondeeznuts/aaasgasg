@@ -56,10 +56,10 @@
             background: #000;
             overflow: hidden;
         }
-        .player-container video {
+        .player-container iframe {
             width: 100%;
             height: 100%;
-            object-fit: contain;
+            border: none;
         }
         .player-placeholder {
             width: 100%;
@@ -71,6 +71,10 @@
             align-items: center;
             justify-content: center;
             color: #666;
+            flex-direction: column;
+            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
         }
         .video-title {
             margin: 15px 0 8px 0;
@@ -137,7 +141,7 @@
     <div class="main-layout">
         <div class="left-col">
             <div class="player-container" id="playerContainer">
-                <div class="player-placeholder">Paste a link above to start watching</div>
+                <div class="player-placeholder">Paste a YouTube link above to start watching</div>
             </div>
             <h2 class="video-title" id="videoTitle"></h2>
             <div class="video-info" id="videoInfo"></div>
@@ -150,16 +154,6 @@
     </div>
 
 <script>
-    // Multiple API endpoints - rotate through if one fails
-    const API_ENDPOINTS = [
-        "https://api.allorigins.win/raw?url=https://invidious.io/api/v1",
-        "https://api.allorigins.win/raw?url=https://invidious.kavin.rocks/api/v1",
-        "https://api.allorigins.win/raw?url=https://inv.nadeko.net/api/v1",
-        "https://api.allorigins.win/raw?url=https://iv.melmac.space/api/v1"
-    ];
-
-    let currentApiIndex = 0;
-
     function getYouTubeId(url) {
         const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
         const match = url.match(regExp);
@@ -174,71 +168,29 @@
         }
     }
 
-    async function fetchWithFallback(videoId) {
-        for (let i = 0; i < API_ENDPOINTS.length; i++) {
-            try {
-                const endpoint = API_ENDPOINTS[i];
-                const response = await fetch(`${endpoint}/videos/${videoId}`);
-                
-                if (!response.ok) throw new Error(`API error: ${response.status}`);
-                
-                const data = await response.json();
-                return data;
-            } catch (error) {
-                console.error(`API endpoint ${i} failed:`, error);
-                if (i === API_ENDPOINTS.length - 1) throw error;
-            }
-        }
-    }
-
     async function setupPage(videoId) {
         const playerContainer = document.getElementById('playerContainer');
         
         try {
-            document.getElementById('videoTitle').innerText = "Loading video...";
+            document.getElementById('videoTitle').innerText = "Loading...";
             document.getElementById('videoInfo').innerText = "";
             
-            const data = await fetchWithFallback(videoId);
+            // Use YouTube's direct embed (no API calls, no external proxies)
+            playerContainer.innerHTML = `
+                <iframe 
+                    src="https://www.youtube.com/embed/${videoId}?modestbranding=1" 
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                    allowfullscreen
+                    referrerpolicy="no-referrer">
+                </iframe>`;
             
-            // Find best quality video stream
-            const streams = data.formatStreams || [];
-            const bestStream = streams.find(s => s.qualityLabel && s.qualityLabel.includes('720')) || streams[0];
-            
-            if (bestStream && bestStream.url) {
-                playerContainer.innerHTML = `<video controls style="width:100%; height:100%; background:#000;"><source src="${bestStream.url}" type="video/mp4"></video>`;
-            } else {
-                playerContainer.innerHTML = `<div class="player-placeholder">No playable streams available</div>`;
-            }
-            
-            // Set title and info
-            document.getElementById('videoTitle').innerText = data.title;
-            document.getElementById('videoInfo').innerText = `By ${data.author} • ${data.viewCount?.toLocaleString() || 'N/A'} views`;
-
-            // Render recommendations
-            const recList = document.getElementById('recList');
-            recList.innerHTML = '';
-
-            if (data.recommendedVideos && data.recommendedVideos.length > 0) {
-                data.recommendedVideos.slice(0, 10).forEach(video => {
-                    const recCard = document.createElement('div');
-                    recCard.className = 'rec-card';
-                    recCard.onclick = () => setupPage(video.videoId);
-
-                    const thumbUrl = video.videoThumbnails?.[0]?.url || '';
-                    recCard.innerHTML = `
-                        <img class="rec-thumb" src="${thumbUrl}" alt="thumbnail" onerror="this.style.display='none'">
-                        <div class="rec-info">
-                            <h4>${video.title}</h4>
-                            <p>${video.author}</p>
-                        </div>
-                    `;
-                    recList.appendChild(recCard);
-                });
-            }
+            // Set title from URL since we can't fetch metadata without API
+            document.getElementById('videoTitle').innerText = `Video ID: ${videoId}`;
+            document.getElementById('videoInfo').innerText = "Playing via YouTube";
 
         } catch (error) {
             console.error("Error loading video:", error);
-            playerContainer.innerHTML = `<div class="player-placeholder">Failed to load video. Try another one.</div>`;
+            playerContainer.innerHTML = `<div class="player-placeholder">Failed to load video</div>`;
             document.getElementById('videoTitle').innerText = "Video unavailable";
         }
     }
