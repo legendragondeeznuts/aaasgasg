@@ -45,7 +45,7 @@
         }
         @media (min-width: 900px) {
             .main-layout {
-                grid-template-columns: 2fr 1fr; /* Video on left, Recs on right */
+                grid-template-columns: 2fr 1fr;
             }
         }
         .player-container {
@@ -56,10 +56,10 @@
             background: #000;
             overflow: hidden;
         }
-        .player-container iframe {
+        .player-container video {
             width: 100%;
             height: 100%;
-            border: none;
+            object-fit: contain;
         }
         .player-placeholder {
             width: 100%;
@@ -76,6 +76,11 @@
             margin: 15px 0 8px 0;
             font-size: 1.2rem;
         }
+        .video-info {
+            font-size: 0.9rem;
+            color: #aaa;
+            margin-top: 10px;
+        }
         .recommendations {
             display: flex;
             flex-direction: column;
@@ -88,9 +93,12 @@
             text-decoration: none;
             color: inherit;
             transition: opacity 0.2s;
+            padding: 8px;
+            border-radius: 8px;
+            background: #1a1a1a;
         }
         .rec-card:hover {
-            opacity: 0.7;
+            background: #2a2a2a;
         }
         .rec-thumb {
             width: 120px;
@@ -115,7 +123,7 @@
         .rec-info p {
             margin: 0;
             font-size: 0.8rem;
-            color: #aaa;
+            color: #888;
         }
     </style>
 </head>
@@ -132,6 +140,7 @@
                 <div class="player-placeholder">Paste a link above to start watching</div>
             </div>
             <h2 class="video-title" id="videoTitle"></h2>
+            <div class="video-info" id="videoInfo"></div>
         </div>
 
         <div class="recommendations">
@@ -141,16 +150,15 @@
     </div>
 
 <script>
-    // Try multiple Invidious instances (fallback if one is down)
-    const INSTANCES = [
-        "https://invidious.io/api/v1",
-        "https://invidious.kavin.rocks/api/v1",
-        "https://inv.nadeko.net/api/v1",
-        "https://iv.melmac.space/api/v1"
+    // Multiple API endpoints - rotate through if one fails
+    const API_ENDPOINTS = [
+        "https://api.allorigins.win/raw?url=https://invidious.io/api/v1",
+        "https://api.allorigins.win/raw?url=https://invidious.kavin.rocks/api/v1",
+        "https://api.allorigins.win/raw?url=https://inv.nadeko.net/api/v1",
+        "https://api.allorigins.win/raw?url=https://iv.melmac.space/api/v1"
     ];
 
-    let currentInstanceApi = INSTANCES[0];
-    let currentInstanceEmbed = "invidious.io";
+    let currentApiIndex = 0;
 
     function getYouTubeId(url) {
         const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
@@ -166,25 +174,47 @@
         }
     }
 
+    async function fetchWithFallback(videoId) {
+        for (let i = 0; i < API_ENDPOINTS.length; i++) {
+            try {
+                const endpoint = API_ENDPOINTS[i];
+                const response = await fetch(`${endpoint}/videos/${videoId}`);
+                
+                if (!response.ok) throw new Error(`API error: ${response.status}`);
+                
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error(`API endpoint ${i} failed:`, error);
+                if (i === API_ENDPOINTS.length - 1) throw error;
+            }
+        }
+    }
+
     async function setupPage(videoId) {
         const playerContainer = document.getElementById('playerContainer');
         
-        // Use Invidious embed instead of YouTube-nocookie
-        playerContainer.innerHTML = `
-            <iframe 
-                src="https://${currentInstanceEmbed}/embed/${videoId}?autoplay=1" 
-                allowfullscreen>
-            </iframe>`;
-
         try {
-            document.getElementById('videoTitle').innerText = "Loading details...";
-            const response = await fetch(`${currentInstanceApi}/videos/${videoId}`);
+            document.getElementById('videoTitle').innerText = "Loading video...";
+            document.getElementById('videoInfo').innerText = "";
             
-            if (!response.ok) throw new Error(`API error: ${response.status}`);
+            const data = await fetchWithFallback(videoId);
             
-            const data = await response.json();
+            // Find best quality video stream
+            const streams = data.formatStreams || [];
+            const bestStream = streams.find(s => s.qualityLabel && s.qualityLabel.includes('720')) || streams[0];
+            
+            if (bestStream && bestStream.url) {
+                playerContainer.innerHTML = `<video controls style="width:100%; height:100%; background:#000;"><source src="${bestStream.url}" type="video/mp4"></video>`;
+            } else {
+                playerContainer.innerHTML = `<div class="player-placeholder">No playable streams available</div>`;
+            }
+            
+            // Set title and info
             document.getElementById('videoTitle').innerText = data.title;
+            document.getElementById('videoInfo').innerText = `By ${data.author} • ${data.viewCount?.toLocaleString() || 'N/A'} views`;
 
+            // Render recommendations
             const recList = document.getElementById('recList');
             recList.innerHTML = '';
 
@@ -207,8 +237,9 @@
             }
 
         } catch (error) {
-            console.error("Error fetching recommendations:", error);
-            document.getElementById('videoTitle').innerText = "Video loaded (No recommendations available).";
+            console.error("Error loading video:", error);
+            playerContainer.innerHTML = `<div class="player-placeholder">Failed to load video. Try another one.</div>`;
+            document.getElementById('videoTitle').innerText = "Video unavailable";
         }
     }
 
