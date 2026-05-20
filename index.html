@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LiteTube Client</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #0f0f0f;
+            color: #fff;
+            margin: 0;
+            padding: 20px;
+        }
+        .search-box {
+            max-width: 800px;
+            margin: 0 auto 20px auto;
+            display: flex;
+            gap: 10px;
+        }
+        input {
+            flex: 1;
+            padding: 12px;
+            border-radius: 20px;
+            border: 1px solid #3c3c3c;
+            background: #121212;
+            color: white;
+            font-size: 16px;
+        }
+        button {
+            padding: 12px 24px;
+            border-radius: 20px;
+            border: none;
+            background: #fff;
+            color: #000;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .main-layout {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        @media (min-width: 900px) {
+            .main-layout {
+                grid-template-columns: 2fr 1fr; /* Video on left, Recs on right */
+            }
+        }
+        .player-container iframe {
+            width: 100%;
+            aspect-ratio: 16/9;
+            border: none;
+            border-radius: 12px;
+            background: #000;
+        }
+        .video-title {
+            margin: 15px 0 8px 0;
+            font-size: 1.2rem;
+        }
+        .recommendations {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .rec-card {
+            display: flex;
+            gap: 10px;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
+        }
+        .rec-thumb {
+            width: 120px;
+            height: 68px;
+            object-fit: cover;
+            border-radius: 8px;
+            background: #222;
+        }
+        .rec-info h4 {
+            margin: 0 0 5px 0;
+            font-size: 0.9rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .rec-info p {
+            margin: 0;
+            font-size: 0.8rem;
+            color: #aaa;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="search-box">
+        <input type="text" id="videoUrl" placeholder="Paste YouTube link or Video ID here...">
+        <button onclick="loadVideoFromInput()">Load</button>
+    </div>
+
+    <div class="main-layout">
+        <div class="left-col">
+            <div class="player-container" id="playerContainer">
+                <div style="aspect-ratio:16/9; background:#222; border-radius:12px; display:flex; align-items:center; justify-content:center; color:#666;">
+                    Paste a link above to start watching
+                </div>
+            </div>
+            <h2 class="video-title" id="videoTitle"></h2>
+        </div>
+
+        <div class="recommendations">
+            <h3>Recommended</h3>
+            <div id="recList"></div>
+        </div>
+    </div>
+
+<script>
+    // Public Invidious instance API endpoint 
+    const API_BASE = "https://iv.melmac.space/api/v1"; 
+
+    function getYouTubeId(url) {
+        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+        const match = url.match(regExp);
+        return (match && match[2].length === 11) ? match[2] : url; // fallback to raw string if it's already an ID
+    }
+
+    function loadVideoFromInput() {
+        const input = document.getElementById('videoUrl').value.trim();
+        const id = getYouTubeId(input);
+        if (id) {
+            setupPage(id);
+        }
+    }
+
+    async function setupPage(videoId) {
+        // 1. Inject the video player (using privacy-friendly embed)
+        const playerContainer = document.getElementById('playerContainer');
+        playerContainer.innerHTML = `
+            <iframe src="https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1" 
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                    allowfullscreen>
+            </iframe>`;
+
+        // 2. Fetch Video Data & Recommendations from the API
+        try {
+            document.getElementById('videoTitle').innerText = "Loading details...";
+            const response = await fetch(`${API_BASE}/videos/${videoId}`);
+            const data = await response.json();
+
+            // Set Title
+            document.getElementById('videoTitle').innerText = data.title;
+
+            // Render Recommended Videos
+            const recList = document.getElementById('recList');
+            recList.innerHTML = ''; // Clear old ones
+
+            data.recommendedVideos.forEach(video => {
+                const recCard = document.createElement('div');
+                recCard.className = 'rec-card';
+                // When clicked, load this recommendation instead
+                recCard.onclick = () => setupPage(video.videoId); 
+
+                recCard.innerHTML = `
+                    <img class="rec-thumb" src="https://images.weserv.nl/?url=${video.videoThumbnails[0].url}" alt="thumbnail">
+                    <div class="rec-info">
+                        <h4>${video.title}</h4>
+                        <p>${video.author}</p>
+                    </div>
+                `;
+                recList.appendChild(recCard);
+            });
+
+        } catch (error) {
+            console.error("Error fetching recommendations:", error);
+            document.getElementById('videoTitle').innerText = "Video loaded (Failed to fetch recommendations).";
+        }
+    }
+
+    // Default video to show on first load (e.g., a music video or trailer)
+    setupPage("dQw4w9WgXcQ");
+</script>
+
+</body>
+</html>
