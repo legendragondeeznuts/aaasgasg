@@ -3,235 +3,285 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Simple Video Player</title>
+    <title>VidFlow - Custom Client</title>
     <style>
-        * {
+        :root {
+            --bg-main: #0f0f0f;
+            --bg-surface: #1f1f1f;
+            --bg-input: #2a2a2a;
+            --text-main: #f1f1f1;
+            --text-sub: #aaa;
+            --accent: #3ea6ff;
+        }
+
+        body {
+            font-family: 'Roboto', 'Segoe UI', Arial, sans-serif;
+            background-color: var(--bg-main);
+            color: var(--text-main);
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-        
-        body {
-            background: linear-gradient(135deg, #1e1e2e 0%, #0f0f1e 100%);
-            color: #e0e0e0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            min-height: 100vh;
-            padding: 20px;
-        }
-        
-        .container {
-            max-width: 900px;
-            margin: 0 auto;
-        }
-        
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        
-        .header h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
-            background: linear-gradient(45deg, #00d4ff, #7c3aed);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        
-        .input-section {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 30px;
-        }
-        
-        .input-section input {
-            flex: 1;
-            padding: 15px;
-            border: 2px solid #333;
-            border-radius: 8px;
-            background: #1a1a2e;
-            color: #e0e0e0;
-            font-size: 16px;
-            transition: all 0.3s ease;
-        }
-        
-        .input-section input:focus {
-            outline: none;
-            border-color: #00d4ff;
-            box-shadow: 0 0 20px rgba(0, 212, 255, 0.2);
-        }
-        
-        .input-section button {
-            padding: 15px 30px;
-            background: linear-gradient(45deg, #00d4ff, #7c3aed);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-size: 16px;
-        }
-        
-        .input-section button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 30px rgba(0, 212, 255, 0.3);
-        }
-        
-        .input-section button:active {
-            transform: translateY(0);
-        }
-        
-        .video-box {
-            background: #0a0a14;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-            margin-bottom: 30px;
-        }
-        
-        .video-wrapper {
-            width: 100%;
-            aspect-ratio: 16 / 9;
-            background: #000;
+
+        /* Top Header Bar */
+        header {
+            background-color: var(--bg-main);
             display: flex;
             align-items: center;
-            justify-content: center;
+            justify-content: space-between;
+            padding: 12px 24px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid #2d2d2d;
         }
-        
-        .video-wrapper iframe {
+
+        .logo {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            cursor: pointer;
+        }
+
+        .logo span {
+            color: var(--accent);
+        }
+
+        .search-container {
+            display: flex;
+            width: 40%;
+            max-width: 600px;
+        }
+
+        .search-container input {
+            flex: 1;
+            background-color: var(--bg-input);
+            border: 1px solid #3c3c3c;
+            padding: 10px 16px;
+            border-radius: 40px 0 0 40px;
+            color: white;
+            font-size: 0.95rem;
+            outline: none;
+        }
+
+        .search-container input:focus {
+            border-color: var(--accent);
+        }
+
+        .search-container button {
+            background-color: #303030;
+            border: 1px solid #3c3c3c;
+            border-left: none;
+            padding: 0 20px;
+            border-radius: 0 40px 40px 0;
+            color: white;
+            cursor: pointer;
+        }
+
+        .search-container button:hover {
+            background-color: #404040;
+        }
+
+        /* Main Workspace Grid */
+        .workspace {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 24px;
+            padding: 24px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        @media (min-width: 1000px) {
+            .workspace {
+                grid-template-columns: 1fr 400px; /* Video left, sidebar right */
+            }
+        }
+
+        /* Left Side: Video Section */
+        .video-stage {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .frame-wrapper {
+            position: relative;
+            width: 100%;
+            padding-bottom: 56.25%; /* 16:9 aspect ratio */
+            height: 0;
+            background-color: #000;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+        }
+
+        .frame-wrapper iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
             width: 100%;
             height: 100%;
-            border: none;
+            border: 0;
         }
-        
-        .placeholder {
-            text-align: center;
-            color: #666;
-            font-size: 18px;
+
+        .video-meta {
+            margin-top: 16px;
         }
-        
-        .info-section {
-            background: #1a1a2e;
-            padding: 20px;
+
+        .video-meta h1 {
+            font-size: 1.3rem;
+            margin: 0 0 8px 0;
+            line-height: 1.4;
+        }
+
+        .video-meta p {
+            margin: 0;
+            color: var(--text-sub);
+            font-size: 0.9rem;
+        }
+
+        /* Right Side: Sidebar Recommendations */
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .sidebar h2 {
+            font-size: 1.1rem;
+            margin: 0;
+            color: var(--text-main);
+        }
+
+        .rec-item {
+            display: flex;
+            gap: 12px;
+            cursor: pointer;
+            text-decoration: none;
+            color: inherit;
             border-radius: 8px;
-            border-left: 4px solid #00d4ff;
+            padding: 4px;
+            transition: background 0.2s;
         }
-        
-        .info-section h2 {
-            margin-bottom: 10px;
-            color: #00d4ff;
-            font-size: 1.2em;
+
+        .rec-item:hover {
+            background-color: var(--bg-surface);
         }
-        
-        .info-section p {
-            color: #a0a0a0;
-            line-height: 1.6;
-        }
-        
-        .instructions {
-            background: #1a1a2e;
-            padding: 20px;
+
+        .thumb-box {
+            position: relative;
+            flex-shrink: 0;
+            width: 160px;
+            height: 90px;
             border-radius: 8px;
-            margin-top: 20px;
-            border-left: 4px solid #7c3aed;
+            overflow: hidden;
+            background-color: #222;
         }
-        
-        .instructions h3 {
-            color: #7c3aed;
-            margin-bottom: 10px;
+
+        .thumb-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
         }
-        
-        .instructions ol {
-            margin-left: 20px;
-            color: #a0a0a0;
-            line-height: 1.8;
+
+        .rec-details {
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
         }
-        
-        .instructions li {
-            margin-bottom: 8px;
+
+        .rec-details h3 {
+            font-size: 0.9rem;
+            margin: 0 0 6px 0;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            line-height: 1.3;
+        }
+
+        .rec-details p {
+            margin: 0;
+            font-size: 0.8rem;
+            color: var(--text-sub);
         }
     </style>
 </head>
 <body>
 
-    <div class="container">
-        <div class="header">
-            <h1>▶ Video Player</h1>
-            <p>Enter a video ID or URL below</p>
+    <header>
+        <div class="logo" onclick="location.reload()">▶ VidFlow</div>
+        <div class="search-container">
+            <input type="text" id="targetUrl" placeholder="Enter YouTube link or Video ID...">
+            <button onclick="processInput()">Load</button>
         </div>
-        
-        <div class="input-section">
-            <input 
-                type="text" 
-                id="videoInput" 
-                placeholder="Enter YouTube video ID or full URL..."
-            >
-            <button onclick="playVideo()">Play</button>
-        </div>
-        
-        <div class="video-box">
-            <div class="video-wrapper" id="videoWrapper">
-                <div class="placeholder">Ready to play a video</div>
-            </div>
-        </div>
-        
-        <div class="info-section">
-            <h2>ℹ How to use:</h2>
-            <p>Paste any YouTube video ID (11 characters) or full URL. Examples:</p>
-            <p style="margin-top: 10px; font-family: monospace; color: #00d4ff;">
-                • dQw4w9WgXcQ<br>
-                • https://www.youtube.com/watch?v=dQw4w9WgXcQ<br>
-                • https://youtu.be/dQw4w9WgXcQ
-            </p>
-        </div>
-        
-        <div class="instructions">
-            <h3>Features:</h3>
-            <ol>
-                <li>Paste any YouTube video link</li>
-                <li>Press Enter or click Play</li>
-                <li>Watch fullscreen</li>
-                <li>Control playback with standard video controls</li>
-            </ol>
-        </div>
-    </div>
+        <div style="width: 80px;"></div>
+    </header>
 
-    <script>
-        function extractVideoId(input) {
-            const patterns = [
-                /(?:youtube\.com\/watch\?v=|youtu\.be\/|embed\/|v\/)([a-zA-Z0-9_-]{11})/,
-                /^([a-zA-Z0-9_-]{11})$/
-            ];
-            
-            for (let pattern of patterns) {
-                const match = input.match(pattern);
-                if (match) return match[1];
-            }
-            
-            return null;
+    <main class="workspace">
+        <section class="video-stage">
+            <div class="frame-wrapper" id="stageFrame">
+                <div style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); color:var(--text-sub);">
+                    Paste a link in the top bar to initialize pipeline.
+                </div>
+            </div>
+            <div class="video-meta">
+                <h1 id="stageTitle">No Video Loaded</h1>
+                <p id="stageAuthor"></p>
+            </div>
+        </section>
+
+        <aside class="sidebar">
+            <h2>Related Content</h2>
+            <div id="sidebarFeed" class="sidebar-feed"></div>
+        </aside>
+    </main>
+
+<script>
+    function parseId(input) {
+        const regex = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+        const match = input.match(regex);
+        return (match && match[2].length === 11) ? match[2] : input;
+    }
+
+    function processInput() {
+        const query = document.getElementById('targetUrl').value.trim();
+        const extractedId = parseId(query);
+        if (extractedId) {
+            streamVideo(extractedId);
         }
-        
-        function playVideo() {
-            const input = document.getElementById('videoInput').value.trim();
-            const videoId = extractVideoId(input);
-            
-            if (!videoId) {
-                alert('Invalid video ID or URL. Please try again.');
-                return;
-            }
-            
-            const wrapper = document.getElementById('videoWrapper');
-            wrapper.innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${videoId}" allowfullscreen></iframe>`;
+    }
+
+    async function streamVideo(id) {
+        // Load the main embed window cleanly - YouTube only
+        const stage = document.getElementById('stageFrame');
+        stage.innerHTML = `
+            <iframe src="https://www.youtube-nocookie.com/embed/${id}?autoplay=1" 
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                    allowfullscreen>
+            </iframe>`;
+
+        document.getElementById('stageTitle').innerText = "Video ID: " + id;
+        document.getElementById('stageAuthor').innerText = "Playing via YouTube";
+
+        // Clear recommendations since we have no API access
+        const feed = document.getElementById('sidebarFeed');
+        feed.innerHTML = '<p style="color: var(--text-sub); font-size: 0.9rem;">Recommendations require API access (unavailable)</p>';
+    }
+
+    // Capture "Enter" key on search element
+    document.getElementById('targetUrl').addEventListener('keypress', function (event) {
+        if (event.key === 'Enter') {
+            processInput();
         }
-        
-        document.getElementById('videoInput').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') playVideo();
-        });
-        
-        document.getElementById('videoInput').value = 'dQw4w9WgXcQ';
-        playVideo();
-    </script>
+    });
+
+    // Default target initialization on first load
+    streamVideo("dQw4w9WgXcQ");
+</script>
 
 </body>
 </html>
