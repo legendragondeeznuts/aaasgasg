@@ -199,7 +199,6 @@
 
     <script>
         function extractVideoId(input) {
-            // Match YouTube video ID patterns
             const patterns = [
                 /(?:youtube\.com\/watch\?v=|youtu\.be\/|embed\/|v\/)([a-zA-Z0-9_-]{11})/,
                 /^([a-zA-Z0-9_-]{11})$/
@@ -223,15 +222,13 @@
             }
             
             const wrapper = document.getElementById('videoWrapper');
-            wrapper.innerHTML = `<iframe src="https://www.youtube.com/embed/${videoId}" allowfullscreen></iframe>`;
+            wrapper.innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${videoId}" allowfullscreen></iframe>`;
         }
         
-        // Allow Enter key to play
         document.getElementById('videoInput').addEventListener('keypress', function(e) {
             if (e.key === 'Enter') playVideo();
         });
         
-        // Pre-load default video
         document.getElementById('videoInput').value = 'dQw4w9WgXcQ';
         playVideo();
     </script>
