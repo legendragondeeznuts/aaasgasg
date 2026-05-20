@@ -3,98 +3,238 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>YouTube Player</title>
+    <title>Simple Video Player</title>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #0f0f0f;
-            color: #fff;
+        * {
             margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1e1e2e 0%, #0f0f1e 100%);
+            color: #e0e0e0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
             padding: 20px;
         }
-        .search-box {
-            max-width: 800px;
-            margin: 0 auto 20px auto;
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(45deg, #00d4ff, #7c3aed);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .input-section {
             display: flex;
             gap: 10px;
+            margin-bottom: 30px;
         }
-        input {
+        
+        .input-section input {
             flex: 1;
-            padding: 12px;
-            border-radius: 20px;
-            border: 1px solid #3c3c3c;
-            background: #121212;
-            color: white;
+            padding: 15px;
+            border: 2px solid #333;
+            border-radius: 8px;
+            background: #1a1a2e;
+            color: #e0e0e0;
             font-size: 16px;
+            transition: all 0.3s ease;
         }
-        button {
-            padding: 12px 24px;
-            border-radius: 20px;
+        
+        .input-section input:focus {
+            outline: none;
+            border-color: #00d4ff;
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.2);
+        }
+        
+        .input-section button {
+            padding: 15px 30px;
+            background: linear-gradient(45deg, #00d4ff, #7c3aed);
+            color: white;
             border: none;
-            background: #fff;
-            color: #000;
+            border-radius: 8px;
             font-weight: bold;
             cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 16px;
         }
-        .player-container {
-            max-width: 1200px;
-            margin: 20px auto;
-            width: 100%;
-            aspect-ratio: 16/9;
-            background: #000;
+        
+        .input-section button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(0, 212, 255, 0.3);
+        }
+        
+        .input-section button:active {
+            transform: translateY(0);
+        }
+        
+        .video-box {
+            background: #0a0a14;
             border-radius: 12px;
             overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            margin-bottom: 30px;
         }
-        .player-container iframe {
+        
+        .video-wrapper {
             width: 100%;
-            height: 100%;
-            border: none;
-        }
-        .placeholder {
-            width: 100%;
-            height: 100%;
+            aspect-ratio: 16 / 9;
+            background: #000;
             display: flex;
             align-items: center;
             justify-content: center;
+        }
+        
+        .video-wrapper iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        
+        .placeholder {
+            text-align: center;
             color: #666;
+            font-size: 18px;
+        }
+        
+        .info-section {
+            background: #1a1a2e;
+            padding: 20px;
+            border-radius: 8px;
+            border-left: 4px solid #00d4ff;
+        }
+        
+        .info-section h2 {
+            margin-bottom: 10px;
+            color: #00d4ff;
+            font-size: 1.2em;
+        }
+        
+        .info-section p {
+            color: #a0a0a0;
+            line-height: 1.6;
+        }
+        
+        .instructions {
+            background: #1a1a2e;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border-left: 4px solid #7c3aed;
+        }
+        
+        .instructions h3 {
+            color: #7c3aed;
+            margin-bottom: 10px;
+        }
+        
+        .instructions ol {
+            margin-left: 20px;
+            color: #a0a0a0;
+            line-height: 1.8;
+        }
+        
+        .instructions li {
+            margin-bottom: 8px;
         }
     </style>
 </head>
 <body>
 
-    <div class="search-box">
-        <input type="text" id="videoUrl" placeholder="Paste YouTube link or Video ID here...">
-        <button onclick="loadVideo()">Load</button>
-    </div>
-
-    <div class="player-container" id="player">
-        <div class="placeholder">Paste a YouTube link above</div>
-    </div>
-
-<script>
-    function getVideoId(url) {
-        const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-        const match = url.match(regExp);
-        return (match && match[2].length === 11) ? match[2] : url;
-    }
-
-    function loadVideo() {
-        const input = document.getElementById('videoUrl').value.trim();
-        const videoId = getVideoId(input);
+    <div class="container">
+        <div class="header">
+            <h1>▶ Video Player</h1>
+            <p>Enter a video ID or URL below</p>
+        </div>
         
-        if (videoId && videoId.length === 11) {
-            const player = document.getElementById('player');
-            player.innerHTML = `<iframe src="https://www.youtube.com/embed/${videoId}" allowfullscreen></iframe>`;
+        <div class="input-section">
+            <input 
+                type="text" 
+                id="videoInput" 
+                placeholder="Enter YouTube video ID or full URL..."
+            >
+            <button onclick="playVideo()">Play</button>
+        </div>
+        
+        <div class="video-box">
+            <div class="video-wrapper" id="videoWrapper">
+                <div class="placeholder">Ready to play a video</div>
+            </div>
+        </div>
+        
+        <div class="info-section">
+            <h2>ℹ How to use:</h2>
+            <p>Paste any YouTube video ID (11 characters) or full URL. Examples:</p>
+            <p style="margin-top: 10px; font-family: monospace; color: #00d4ff;">
+                • dQw4w9WgXcQ<br>
+                • https://www.youtube.com/watch?v=dQw4w9WgXcQ<br>
+                • https://youtu.be/dQw4w9WgXcQ
+            </p>
+        </div>
+        
+        <div class="instructions">
+            <h3>Features:</h3>
+            <ol>
+                <li>Paste any YouTube video link</li>
+                <li>Press Enter or click Play</li>
+                <li>Watch fullscreen</li>
+                <li>Control playback with standard video controls</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        function extractVideoId(input) {
+            // Match YouTube video ID patterns
+            const patterns = [
+                /(?:youtube\.com\/watch\?v=|youtu\.be\/|embed\/|v\/)([a-zA-Z0-9_-]{11})/,
+                /^([a-zA-Z0-9_-]{11})$/
+            ];
+            
+            for (let pattern of patterns) {
+                const match = input.match(pattern);
+                if (match) return match[1];
+            }
+            
+            return null;
         }
-    }
-
-    document.getElementById('videoUrl').addEventListener('keypress', function(e) {
-        if (e.key === 'Enter') loadVideo();
-    });
-
-    loadVideo();
-    document.getElementById('videoUrl').value = 'dQw4w9WgXcQ';
-</script>
+        
+        function playVideo() {
+            const input = document.getElementById('videoInput').value.trim();
+            const videoId = extractVideoId(input);
+            
+            if (!videoId) {
+                alert('Invalid video ID or URL. Please try again.');
+                return;
+            }
+            
+            const wrapper = document.getElementById('videoWrapper');
+            wrapper.innerHTML = `<iframe src="https://www.youtube.com/embed/${videoId}" allowfullscreen></iframe>`;
+        }
+        
+        // Allow Enter key to play
+        document.getElementById('videoInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') playVideo();
+        });
+        
+        // Pre-load default video
+        document.getElementById('videoInput').value = 'dQw4w9WgXcQ';
+        playVideo();
+    </script>
 
 </body>
 </html>
